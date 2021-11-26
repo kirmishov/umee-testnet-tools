@@ -1,0 +1,12 @@
+rpc: 136.243.175.162:26657
+rest: 136.243.175.162:1317
+watchlist: [
+  {
+  'name': 'my_node_1c_phase',
+  'validator_address': '57B2A7CC37B78FA237DE329E3C0093F971C7D475',
+  'valoper': 'umeevaloper1nrmmuw7qgxkcef0k20ps9eardl8hu38d7t98sx'
+  },
+]
+telegram:
+  send_message_url: https://api.telegram.org/botXXX:XXX/sendMessage
+  chat_id: XXX
