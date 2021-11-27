@@ -1,4 +1,5 @@
 import itertools
+import argparse
 import requests
 import yaml
 
@@ -14,11 +15,16 @@ for v in validators_status_lst:
 
 
 def check_missed_block(validators_status_lst, block_height):
-    for v in validators_status_lst:
-        data = request_get(f'http://{config["rpc"]}/block?height={block_height}')
-        if not any(d['validator_address'] == v['validator_address'] for d in data['result']['block']['last_commit']['signatures']):
-            sendMessage(f'{v["name"]} missed block: {block_height} | timestamp: {data["result"]["block"]["header"]["time"]}')
-            v['missed_blocks'].append(block_height)
+    try:
+        for v in validators_status_lst:
+            data = request_get(f'http://{config["rpc"]}/block?height={block_height}')
+            if not any(d['validator_address'] == v['validator_address'] for d in data['result']['block']['last_commit']['signatures']):
+                sendMessage(f'{v["name"]} missed block: {block_height} | timestamp: {data["result"]["block"]["header"]["time"]}')
+                v['missed_blocks'].append(block_height)
+        return validators_status_lst
+    except:
+        # case if block_height higher than the current blockchain height
+        return None
 
 
 def check_is_jailed(validators_status_lst):
@@ -50,6 +56,12 @@ def sendMessage(text):
 
 
 if __name__ == '__main__':
-    for block_height in itertools.count(start=1):
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-s", "--start_block_height", type=int, default=1)
+    args = parser.parse_args()
+    
+    for block_height in itertools.count(start=args.start_block_height):
         check_is_jailed(validators_status_lst)
-        check_missed_block(validators_status_lst, block_height)
+        validators_status_actual = check_missed_block(validators_status_lst, block_height)
+        while not validators_status_actual:
+            validators_status_actual = check_missed_block(validators_status_lst, block_height)
