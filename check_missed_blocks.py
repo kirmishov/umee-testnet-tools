@@ -17,7 +17,7 @@ for v in validators_status_lst:
 def check_missed_block(validators_status_lst, block_height):
     try:
         for v in validators_status_lst:
-            data = request_get(f'http://{config["rpc"]}/block?height={block_height}')
+            data = request_get(f'{config["rpc"]}/block?height={block_height}')
             if not any(d['validator_address'] == v['validator_address'] for d in data['result']['block']['last_commit']['signatures']):
                 sendMessage(f'{v["name"]} missed block: {block_height} | timestamp: {data["result"]["block"]["header"]["time"]}')
                 v['missed_blocks'].append(block_height)
@@ -28,12 +28,15 @@ def check_missed_block(validators_status_lst, block_height):
 
 
 def check_is_jailed(validators_status_lst):
-    for v in validators_status_lst:
-        data = request_get(f'http://{config["rest"]}/staking/validators/{v["valoper"]}')
-        last_status = data["result"]["jailed"]
-        if v['jailed'] != last_status:
-            sendMessage(f'{v["name"]} jailed: {last_status}')
-            v['jailed'] = last_status
+    try:
+        for v in validators_status_lst:
+            data = request_get(f'{config["rest"]}/staking/validators/{v["valoper"]}')
+            last_status = data["result"]["jailed"]
+            if v['jailed'] != last_status:
+                sendMessage(f'{v["name"]} jailed: {last_status}')
+                v['jailed'] = last_status
+    except:
+        pass
 
 
 def request_get(url, attempts = 3):
@@ -42,6 +45,7 @@ def request_get(url, attempts = 3):
     while (r is None and i < attempts):
         try:
             i+=1
+            print(url)
             r = requests.get(url)
             return r.json()
         except Exception as e:
@@ -59,7 +63,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-s", "--start_block_height", type=int, default=1)
     args = parser.parse_args()
-    
+
     for block_height in itertools.count(start=args.start_block_height):
         check_is_jailed(validators_status_lst)
         validators_status_actual = check_missed_block(validators_status_lst, block_height)
