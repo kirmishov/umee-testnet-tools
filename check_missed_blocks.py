@@ -28,10 +28,10 @@ def check_missed_block(validators_status_lst, block_height, block_counter):
             if block_counter == 5000:
                 sendMessage(f'{v["name"]} without missed blocks count: {block_counter}')
                 block_counter = 0
-        return validators_status_lst
+        return validators_status_lst, block_counter
     except:
         # case if block_height higher than the current blockchain height
-        return None
+        return None, block_counter
 
 
 def check_is_jailed(validators_status_lst):
@@ -74,7 +74,7 @@ if __name__ == '__main__':
     block_counter = 0
 
     for block_height in itertools.count(start=args.start_block_height):
-        check_is_jailed(validators_status_lst)
-        validators_status_actual = check_missed_block(validators_status_lst, block_height, block_counter)
+        # check_is_jailed(validators_status_lst)
+        validators_status_actual, block_counter = check_missed_block(validators_status_lst, block_height, block_counter)
         while not validators_status_actual:
-            validators_status_actual = check_missed_block(validators_status_lst, block_height, block_counter)
+            validators_status_actual, block_counter = check_missed_block(validators_status_lst, block_height, block_counter)
