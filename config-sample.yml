@@ -9,4 +9,4 @@ watchlist: [
 ]
 telegram:
   send_message_url: https://api.telegram.org/botXXX:XXX/sendMessage
-  chat_id: XXX
+  chat_id: [XXX, YYY]

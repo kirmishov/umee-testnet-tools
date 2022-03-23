@@ -14,13 +14,20 @@ for v in validators_status_lst:
     v['missed_blocks'] = []
 
 
-def check_missed_block(validators_status_lst, block_height):
+def check_missed_block(validators_status_lst, block_height, block_counter):
     try:
         for v in validators_status_lst:
+            print(f'block_counter: {block_counter}')
             data = request_get(f'{config["rpc"]}/block?height={block_height}')
             if not any(d['validator_address'] == v['validator_address'] for d in data['result']['block']['last_commit']['signatures']):
                 sendMessage(f'{v["name"]} missed block: {block_height} | timestamp: {data["result"]["block"]["header"]["time"]}')
                 v['missed_blocks'].append(block_height)
+                block_counter = 0
+            else:
+                block_counter += 1
+            if block_counter == 5000:
+                sendMessage(f'{v["name"]} without missed blocks count: {block_counter}')
+                block_counter = 0
         return validators_status_lst
     except:
         # case if block_height higher than the current blockchain height
@@ -45,7 +52,7 @@ def request_get(url, attempts = 3):
     while (r is None and i < attempts):
         try:
             i+=1
-            print(url)
+            print(url, i)
             r = requests.get(url)
             return r.json()
         except Exception as e:
@@ -54,7 +61,8 @@ def request_get(url, attempts = 3):
 
 def sendMessage(text):
     try:
-        r = requests.post(url = config['telegram']['send_message_url'], data = {'chat_id': config['telegram']['chat_id'], 'text': text})
+        for chat_id in config['telegram']['chat_id']:
+            r = requests.post(url = config['telegram']['send_message_url'], data = {'chat_id': chat_id, 'text': text})
     except:
         print(f'Unsuccessful attempt send message: {text}')
 
@@ -63,9 +71,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-s", "--start_block_height", type=int, default=1)
     args = parser.parse_args()
+    block_counter = 0
 
     for block_height in itertools.count(start=args.start_block_height):
         check_is_jailed(validators_status_lst)
-        validators_status_actual = check_missed_block(validators_status_lst, block_height)
+        validators_status_actual = check_missed_block(validators_status_lst, block_height, block_counter)
         while not validators_status_actual:
-            validators_status_actual = check_missed_block(validators_status_lst, block_height)
+            validators_status_actual = check_missed_block(validators_status_lst, block_height, block_counter)
