@@ -25,9 +25,8 @@ def check_missed_block(validators_status_lst, block_height, block_counter):
                 block_counter = 0
             else:
                 block_counter += 1
-            if block_counter == 5000:
+            if block_counter % 5000 == 0:
                 sendMessage(f'{v["name"]} without missed blocks count: {block_counter}')
-                block_counter = 0
         return validators_status_lst, block_counter
     except:
         # case if block_height higher than the current blockchain height
